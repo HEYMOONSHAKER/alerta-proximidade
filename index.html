@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Demonstração interativa do alerta de proximidade por RSSI em BLE para idosos com demência (estudo dirigido EPIIOTA).">
+<title>Alerta de Proximidade</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@600;700&display=swap">
+<style>
+/* Conceito: painel de demonstração para videochamada, planta da casa à esquerda e sinal RSSI à direita, controles embaixo. Paleta herdada dos slides: verde-azulado e sálvia, coral para o alerta. */
+:root {
+  --bg: #EEF3F1;
+  --surface: #FFFFFF;
+  --fg: #1C3336;
+  --muted: #566D71;
+  --line: #D3DFDB;
+  --accent: #3A7783;
+  --accent-soft: #DCEBEC;
+  --alert: #C1432C;
+  --alert-soft: #F8E3DE;
+  --ok: #2F7D58;
+  --ok-soft: #DFF0E7;
+  --raw: #A9BDBD;
+  --font-head: 'Lora', Georgia, serif;
+  --font-body: 'Lato', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1B1D; --surface: #162629; --fg: #E3EEEC; --muted: #8FA7AA; --line: #2A4044;
+    --accent: #6DB4BF; --accent-soft: #1F3A3F; --alert: #F08A72; --alert-soft: #3A2420;
+    --ok: #6CC299; --ok-soft: #1C3328; --raw: #4C6568; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1B1D; --surface: #162629; --fg: #E3EEEC; --muted: #8FA7AA; --line: #2A4044;
+  --accent: #6DB4BF; --accent-soft: #1F3A3F; --alert: #F08A72; --alert-soft: #3A2420;
+  --ok: #6CC299; --ok-soft: #1C3328; --raw: #4C6568; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--font-head); font-size: clamp(26px, 4vw, 38px); line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-head); font-size: 20px; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 6px 0 0; max-width: 70ch; }
+.eyebrow { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin: 0 0 6px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.cap { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
+svg { display: block; width: 100%; height: auto; }
+
+/* indicadores */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.stat .k { font-size: 13px; color: var(--muted); }
+.stat .v { font-family: var(--font-head); font-size: clamp(24px, 3.4vw, 34px); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.stat .u { font-size: 14px; color: var(--muted); font-family: var(--font-body); }
+.state { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); font-size: 18px; }
+.state.alert { background: var(--alert-soft); color: var(--alert); }
+.state::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.notice { margin-top: 10px; border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; color: var(--muted); font-size: 15px; min-height: 3.2em; }
+.notice.on { border: 1px solid var(--alert); background: var(--alert-soft); color: var(--fg); }
+.notice b { color: var(--alert); }
+
+/* controles */
+.controls { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: inherit; font-weight: 700; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 14px; cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.sliders { display: grid; gap: 12px; }
+.sl { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: baseline; }
+.sl label { font-weight: 700; }
+.sl output { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 700; }
+.sl input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.sl small { grid-column: 1 / -1; color: var(--muted); font-size: 13px; margin-top: -2px; }
+
+/* teste em lote */
+.bars { display: grid; gap: 6px; margin-top: 10px; }
+.brow { display: grid; grid-template-columns: 74px minmax(0, 1fr) 54px 74px; gap: 10px; align-items: center; font-variant-numeric: tabular-nums; }
+.brow .track { height: 18px; background: var(--accent-soft); border-radius: 4px; overflow: hidden; }
+.brow .fill { height: 100%; background: var(--alert); width: 0; transition: width .25s; }
+.brow .pct { text-align: right; font-weight: 700; }
+.brow .ref { color: var(--muted); font-size: 14px; text-align: right; }
+.bhead { display: grid; grid-template-columns: 74px minmax(0, 1fr) 54px 74px; gap: 10px; font-size: 13px; color: var(--muted); }
+.bhead span:nth-child(3), .bhead span:nth-child(4) { text-align: right; }
+.foot { color: var(--muted); font-size: 14px; }
+
+/* svg */
+.t-axis { fill: var(--muted); font-size: var(--fs, 12px); font-family: var(--font-body); }
+.t-lab { fill: var(--fg); font-size: var(--fs, 13px); font-family: var(--font-body); font-weight: 700; }
+.grid-line { stroke: var(--line); stroke-width: 1; }
+.l-raw { stroke: var(--raw); fill: none; stroke-width: 1.5; }
+.l-filt { stroke: var(--accent); fill: none; stroke-width: 3; stroke-linejoin: round; }
+.l-thr { stroke: var(--alert); stroke-width: 2; stroke-dasharray: 6 5; }
+.l-alert { stroke: var(--alert); stroke-width: 2; }
+.house { fill: var(--accent-soft); stroke: none; }
+.wall { stroke: var(--fg); stroke-width: 4; stroke-linecap: round; }
+.ring { fill: var(--alert-soft); fill-opacity: .28; stroke: var(--alert); stroke-width: 2; stroke-dasharray: 7 5; }
+.esp { fill: var(--fg); }
+.me { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.est { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 3 3; }
+.me.out { fill: var(--alert); }
+
+.start ol, .how ol { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 4px; }
+.seedrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; }
+.seedrow input { width: 90px; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; }
+details.how summary { cursor: pointer; font-family: var(--font-head); font-size: 20px; font-weight: 700; }
+details.how .eq { text-align: center; font-size: 18px; margin: 10px 0; }
+details.how p { margin: 8px 0; max-width: 80ch; }
+a { color: var(--accent); }
+@media (max-width: 860px) {
+  .grid2, .controls { grid-template-columns: minmax(0, 1fr); }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brow, .bhead { grid-template-columns: 58px minmax(0, 1fr) 46px 58px; gap: 6px; }
+}
+@media (prefers-reduced-motion: reduce) { .brow .fill { transition: none; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">EPIIOTA · Estudo dirigido</p>
+    <h1>Alerta de proximidade para idosos com demência</h1>
+    <p class="sub">Simulação ao vivo do método estudado: um ESP32 perto da porta mede o sinal Bluetooth (RSSI) da etiqueta, suaviza com média móvel, estima a distância e avisa o cuidador. Parâmetros do relatório: RSSI a 1 m de −50 dBm e expoente de perda n = 2,2.</p>
+  </header>
+
+  <section class="panel start">
+    <h2>Como usar</h2>
+    <ol>
+      <li>Clique em <b>Parado a 2 m, sem filtro</b>. A etiqueta não se mexe, mas o sistema dá alarme falso.</li>
+      <li>Clique em <b>Parado a 2 m, com média móvel</b>. O mesmo sinal, agora sem alarme falso.</li>
+      <li>Clique em <b>Saída de casa</b> e veja o alerta chegar ao cuidador.</li>
+      <li>Mexa nos ajustes e acompanhe a tabela de falso alarme mudar.</li>
+    </ol>
+  </section>
+
+  <div class="btns" role="group" aria-label="Cenários">
+    <button id="sc1" type="button">Parado a 2 m, sem filtro</button>
+    <button id="sc2" type="button">Parado a 2 m, com média móvel</button>
+    <button id="sc3" type="button">Saída de casa</button>
+    <button id="pause" type="button">Pausar</button>
+  </div>
+  <div class="seedrow">
+    <label for="seed">Semente do sorteio</label><input id="seed" type="number" min="0" max="999999" value="42">
+    <button id="newSeed" type="button">Nova semente</button>
+    <span>Com a mesma semente, cada cenário se repete igual.</span>
+  </div>
+
+  <div class="stats" aria-live="polite">
+    <div class="stat"><div class="k">Distância real</div><div class="v"><span id="vReal">2,0</span> <span class="u">m</span></div></div>
+    <div class="stat"><div class="k">Distância estimada</div><div class="v"><span id="vEst">2,0</span> <span class="u">m</span></div></div>
+    <div class="stat"><div class="k">RSSI filtrado</div><div class="v"><span id="vRssi">−57</span> <span class="u">dBm</span></div></div>
+    <div class="stat"><div class="k">Estado do sistema</div><div style="margin-top:6px"><span id="vState" class="state">Em casa</span></div></div>
+  </div>
+
+  <div class="grid2">
+    <section class="panel">
+      <h2>Planta da casa</h2>
+      <p class="cap">O círculo tracejado é o limiar. O ponto cheio é a etiqueta de verdade, o ponto vazado é onde o sistema acha que ela está.</p>
+      <svg id="plan" viewBox="0 0 520 300" role="img" aria-label="Planta da casa com o ESP32, o limiar de distância e a posição da etiqueta"></svg>
+      <div id="notice" class="notice">Nenhum alerta enviado. O cuidador só é avisado quando a distância estimada passa do limiar.</div>
+    </section>
+    <section class="panel">
+      <h2>Sinal recebido pelo ESP32</h2>
+      <p class="cap">Cada leitura simula 1 segundo. A linha clara é o RSSI bruto, com ruído. A linha forte é a média móvel.</p>
+      <svg id="chart" viewBox="0 0 640 300" role="img" aria-label="Gráfico do RSSI bruto e filtrado ao longo do tempo"></svg>
+    </section>
+  </div>
+
+  <section class="panel controls">
+    <div>
+      <h2>Ajustes</h2>
+      <div class="sliders">
+        <div class="sl"><label for="sDist">Distância real da etiqueta</label><output id="oDist">2,0 m</output>
+          <input id="sDist" type="range" min="0.5" max="9" step="0.1" value="2"><small>Mexer aqui põe a etiqueta parada na distância escolhida, com pequena variação natural de movimento.</small></div>
+        <div class="sl"><label for="sW">Janela da média móvel (W)</label><output id="oW">5 leituras</output>
+          <input id="sW" type="range" min="1" max="20" step="1" value="5"></div>
+        <div class="sl"><label for="sSig">Ruído do sinal</label><output id="oSig">4 dB</output>
+          <input id="sSig" type="range" min="1" max="8" step="0.5" value="4"></div>
+        <div class="sl"><label for="sThr">Limiar de distância</label><output id="oThr">4,0 m</output>
+          <input id="sThr" type="range" min="2" max="8" step="0.5" value="4"></div>
+        <div class="sl"><label for="sP">Leituras seguidas acima do limiar</label><output id="oP">1</output>
+          <input id="sP" type="range" min="1" max="5" step="1" value="1"><small>Com 1, qualquer leitura filtrada acima do limiar já dispara o alerta.</small></div>
+      </div>
+      <div class="btns" style="margin-top:14px"><button id="reset" type="button">Zerar alerta</button></div>
+    </div>
+    <div>
+      <h2>Falso alarme em 300 sessões</h2>
+      <p class="cap">Etiqueta parada a cerca de 2 m, sessões de 140 leituras, com os ajustes ao lado. Equivale à Tabela 3 do relatório.</p>
+      <div class="bhead"><span>Janela W</span><span></span><span>Agora</span><span>Relatório</span></div>
+      <div class="bars" id="bars"></div>
+      <p class="foot" style="margin-top:10px">A coluna "Relatório" vale para ruído de 4 dB, limiar de 4 m e 1 leitura seguida.</p>
+    </div>
+  </section>
+
+  <details class="panel how">
+    <summary>Como funciona</summary>
+    <p>O ESP32 fica dentro de casa, perto da porta, e escuta os anúncios Bluetooth Low Energy da etiqueta. Para cada anúncio ele lê a intensidade do sinal (RSSI). Quanto mais longe a etiqueta, mais fraco o sinal, segundo o modelo de perda de percurso:</p>
+    <p class="eq">RSSI(d) = RSSI<sub>0</sub> − 10 · n · log<sub>10</sub>(d) + ε</p>
+    <p>Invertendo o modelo, a distância estimada a partir de uma leitura é:</p>
+    <p class="eq">d<sub>est</sub> = 10<sup>(RSSI<sub>0</sub> − RSSI) / (10 · n)</sup></p>
+    <p>RSSI<sub>0</sub> é o sinal a 1 metro (−50 dBm nesta demonstração), n é o expoente de perda do ambiente (2,2) e ε é o ruído, que aqui segue uma distribuição normal.</p>
+    <ol>
+      <li>A etiqueta emite anúncios e o ESP32 registra o RSSI de cada um.</li>
+      <li>O ESP32 calcula a média das últimas W leituras, a média móvel.</li>
+      <li>Converte o RSSI filtrado em distância estimada.</li>
+      <li>Se a distância estimada ficar acima do limiar pelo número de leituras escolhido, o alerta é enviado.</li>
+      <li>O alerta segue por MQTT até o servidor, que avisa o cuidador.</li>
+    </ol>
+    <p>Sem a média móvel, o ruído sozinho já faz o RSSI cruzar o limiar de vez em quando, e o sistema dá alarme falso. A janela de 5 a 8 leituras resolve isso nas condições simuladas.</p>
+  </details>
+
+  <p id="repoLinks" class="foot" hidden>Código da simulação em Python: <a href="simulacao/simulacao_rssi.py">simulacao/simulacao_rssi.py</a>. Instruções no <a href="README.md">README</a>.</p>
+
+  <p class="foot">Dados simulados pelos autores a partir do modelo de perda de percurso log-distance. Não são medições com a SmartTag real, que serão feitas com o ESP32-WROOM-32U e a antena externa.</p>
+</div>
+
+<script>
+(function () {
+  var R0 = -50, N = 2.2, TICK = 400, SHOW = 80, DOOR = 2.5, REF = { 1: 100, 2: 73, 3: 23, 5: 2, 8: 0, 12: 0, 16: 0, 20: 0 };
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (x, d) { return x.toFixed(d).replace('.', ',').replace('-', '−'); };
+  function makeRng(seed) { var a = seed >>> 0; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var rnd = makeRng(42);
+  function gauss(r) { var u = 0; while (!u) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+  function rssiAt(d, s, r) { return R0 - 10 * N * Math.log10(Math.max(d, 0.1)) + gauss(r || rnd) * s; }
+  function fontFor(el, vbW, target) { var w = el.clientWidth || vbW; return Math.max(12, Math.min(24, Math.round(target * vbW / w))); }
+  function distFrom(r) { return Math.pow(10, (R0 - r) / (10 * N)); }
+  function mean(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s / a.length; }
+
+  var S = { mode: 'idle', base: 2, W: 5, sig: 4, thr: 4, P: 1, run: true, raw: [], filt: [], real: [], est: [],
+            n: 0, cnt: 0, alerted: false, alertAt: -1, alertDist: 0, seed: 42, sc: 'sc2' };
+
+  function reset() { S.raw = []; S.filt = []; S.real = []; S.est = []; S.n = 0; S.cnt = 0; S.alerted = false; S.alertAt = -1; }
+
+  function tick() {
+    var d;
+    if (S.mode === 'walk') { S.base = Math.min(9, S.base + 0.12); d = S.base; }
+    else d = Math.max(0.3, S.base + (rnd() * 0.6 - 0.3));
+    var r = rssiAt(d, S.sig);
+    S.raw.push(r); S.real.push(d);
+    var w = S.raw.slice(-S.W), f = mean(w), e = distFrom(f);
+    S.filt.push(f); S.est.push(e); S.n++;
+    if (e > S.thr) S.cnt++; else S.cnt = 0;
+    if (!S.alerted && S.cnt >= S.P) { S.alerted = true; S.alertAt = S.n - 1; S.alertDist = e; }
+    if (S.raw.length > 400) { S.raw.shift(); S.filt.shift(); S.real.shift(); S.est.shift(); S.alertAt -= 1; }
+    render();
+  }
+
+  /* planta */
+  var PX = 30, EX = 130, EY = 150, CA = Math.cos(12 * Math.PI / 180), SA = Math.sin(12 * Math.PI / 180);
+  function pt(d) { return [EX + d * PX * CA, EY + d * PX * SA]; }
+  function drawPlan(real, est) {
+    var wall = pt(DOOR)[0], dy = pt(DOOR)[1];
+    $('plan').style.setProperty('--fs', fontFor($('plan'), 520, 11) + 'px');
+    var p = pt(real), q = pt(Math.min(est, 11));
+    var out = real > DOOR;
+    var s = '';
+    s += '<rect class="house" x="14" y="40" width="' + (wall - 14) + '" height="220" rx="4"/>';
+    s += '<circle class="ring" cx="' + EX + '" cy="' + EY + '" r="' + (S.thr * PX) + '"/>';
+    s += '<line class="wall" x1="14" y1="40" x2="' + wall + '" y2="40"/><line class="wall" x1="14" y1="260" x2="' + wall + '" y2="260"/><line class="wall" x1="14" y1="40" x2="14" y2="260"/>';
+    s += '<line class="wall" x1="' + wall + '" y1="40" x2="' + wall + '" y2="' + (dy - 24) + '"/><line class="wall" x1="' + wall + '" y1="' + (dy + 24) + '" x2="' + wall + '" y2="260"/>';
+    s += '<text class="t-axis" x="24" y="62">Casa</text>';
+    s += '<text class="t-axis" x="' + (wall + 12) + '" y="62">Rua</text>';
+    s += '<text class="t-axis" x="' + (wall + 6) + '" y="' + (dy + 44) + '">Porta</text>';
+    s += '<rect class="esp" x="' + (EX - 9) + '" y="' + (EY - 9) + '" width="18" height="18" rx="3"/>';
+    s += '<text class="t-lab" x="' + (EX - 30) + '" y="' + (EY - 18) + '">ESP32</text>';
+    s += '<circle class="est" cx="' + q[0] + '" cy="' + q[1] + '" r="11"/>';
+    s += '<circle class="me' + (out ? ' out' : '') + '" cx="' + p[0] + '" cy="' + p[1] + '" r="7"/>';
+    s += '<text class="t-axis" x="' + (p[0] - 18) + '" y="' + (p[1] - 14) + '">Etiqueta</text>';
+    var rt = pt(S.thr);
+    s += '<text class="t-axis" x="' + (EX + 8) + '" y="' + (EY + S.thr * PX + 16) + '">limiar ' + fmt(S.thr, 1) + ' m</text>';
+    $('plan').innerHTML = s;
+  }
+
+  /* gráfico */
+  function drawChart() {
+    var fsz = fontFor($('chart'), 640, 11); $('chart').style.setProperty('--fs', fsz + 'px');
+    var W = 640, H = 300, L = 36 + fsz, Rr = 12, T = 12, B = 22 + fsz, ymin = -90, ymax = -40;
+    var x0 = Math.max(0, S.raw.length - SHOW), n = Math.min(S.raw.length, SHOW);
+    var X = function (i) { return L + (i / (SHOW - 1)) * (W - L - Rr); };
+    var Y = function (v) { return T + (ymax - Math.max(ymin, Math.min(ymax, v))) / (ymax - ymin) * (H - T - B); };
+    var s = '';
+    for (var v = ymin; v <= ymax; v += 10) {
+      s += '<line class="grid-line" x1="' + L + '" x2="' + (W - Rr) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/>';
+      s += '<text class="t-axis" x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + fmt(v, 0) + '</text>';
+    }
+    s += '<text class="t-axis" x="' + L + '" y="' + (H - 6) + '">últimas ' + SHOW + ' leituras</text>';
+    s += '<text class="t-axis" x="' + (W - Rr) + '" y="' + (H - 6) + '" text-anchor="end">RSSI (dBm)</text>';
+    var thrR = R0 - 10 * N * Math.log10(S.thr);
+    s += '<line class="l-thr" x1="' + L + '" x2="' + (W - Rr) + '" y1="' + Y(thrR) + '" y2="' + Y(thrR) + '"/>';
+    s += '<text class="t-axis" x="' + (W - Rr - 4) + '" y="' + (Y(thrR) - 6) + '" text-anchor="end" style="fill:var(--alert)">limiar ' + fmt(thrR, 1) + ' dBm</text>';
+    var rawP = '', fP = '';
+    for (var i = 0; i < n; i++) {
+      rawP += X(i).toFixed(1) + ',' + Y(S.raw[x0 + i]).toFixed(1) + ' ';
+      fP += X(i).toFixed(1) + ',' + Y(S.filt[x0 + i]).toFixed(1) + ' ';
+    }
+    if (n > 1) {
+      s += '<polyline class="l-raw" points="' + rawP + '"/>';
+      s += '<polyline class="l-filt" points="' + fP + '"/>';
+    }
+    if (S.alerted && S.alertAt >= x0) {
+      var ax = X(S.alertAt - x0);
+      s += '<line class="l-alert" x1="' + ax + '" x2="' + ax + '" y1="' + T + '" y2="' + (H - B) + '"/>';
+      s += '<text class="t-lab" x="' + (ax > W - 130 ? ax - 6 : ax + 6) + '" y="' + (T + 14) + '" text-anchor="' + (ax > W - 130 ? 'end' : 'start') + '" style="fill:var(--alert)">alerta enviado</text>';
+    }
+    $('chart').innerHTML = s;
+  }
+
+  function render() {
+    var k = S.real.length - 1;
+    if (k < 0) return;
+    if (S.mode === 'walk') { $('sDist').value = S.base; $('oDist').textContent = fmt(S.base, 1) + ' m'; }
+    drawPlan(S.real[k], S.est[k]);
+    drawChart();
+    $('vReal').textContent = fmt(S.real[k], 1);
+    $('vEst').textContent = fmt(S.est[k], 1);
+    $('vRssi').textContent = fmt(S.filt[k], 0);
+    var st = $('vState');
+    st.textContent = S.alerted ? 'ALERTA' : 'Em casa';
+    st.className = 'state' + (S.alerted ? ' alert' : '');
+    var nt = $('notice');
+    if (S.alerted) {
+      nt.className = 'notice on';
+      nt.innerHTML = '<b>Mensagem ao cuidador:</b> possível saída de casa. A etiqueta foi estimada a ' + fmt(S.alertDist, 2) + ' m da porta, acima do limiar de ' + fmt(S.thr, 1) + ' m.';
+    } else {
+      nt.className = 'notice';
+      nt.textContent = 'Nenhum alerta enviado. O cuidador só é avisado quando a distância estimada passa do limiar.';
+    }
+  }
+
+  /* teste em lote */
+  function batch() {
+    var Ws = [1, 2, 3, 5, 8, 12, 16, 20], rows = '', br = makeRng(S.seed + 1000);
+    Ws.forEach(function (W) {
+      var fa = 0, L = 140, reps = 300;
+      for (var r = 0; r < reps; r++) {
+        var buf = [], cnt = 0, trig = false;
+        for (var i = 0; i < L && !trig; i++) {
+          var d = 2 + (br() * 0.6 - 0.3);
+          buf.push(rssiAt(d, S.sig, br));
+          if (buf.length < W) continue;
+          var e = distFrom(mean(buf.slice(-W)));
+          if (e > S.thr) cnt++; else cnt = 0;
+          if (cnt >= S.P) trig = true;
+        }
+        if (trig) fa++;
+      }
+      var pct = Math.round(fa / reps * 100);
+      rows += '<div class="brow"><span>' + W + (W === 1 ? ' (sem filtro)' : '') + '</span><span class="track"><span class="fill" style="display:block;width:' + pct + '%"></span></span><span class="pct">' + pct + '%</span><span class="ref">' + REF[W] + '%</span></div>';
+    });
+    $('bars').innerHTML = rows;
+  }
+  var bt = null;
+  function batchSoon() { clearTimeout(bt); bt = setTimeout(batch, 120); }
+
+  /* controles */
+  function syncUI() {
+    $('sDist').value = Math.min(9, S.base); $('oDist').textContent = fmt(S.base, 1) + ' m';
+    $('sW').value = S.W; $('oW').textContent = S.W + (S.W === 1 ? ' leitura' : ' leituras');
+    $('sSig').value = S.sig; $('oSig').textContent = fmt(S.sig, S.sig % 1 ? 1 : 0) + ' dB';
+    $('sThr').value = S.thr; $('oThr').textContent = fmt(S.thr, 1) + ' m';
+    $('sP').value = S.P; $('oP').textContent = S.P;
+    ['sc1', 'sc2', 'sc3'].forEach(function (id) { $(id).classList.remove('on'); });
+  }
+  function readSeed() { var v = parseInt($('seed').value, 10); S.seed = isNaN(v) ? 42 : Math.abs(v); $('seed').value = S.seed; rnd = makeRng(S.seed); }
+  function scenario(id, mode, base, W) {
+    readSeed(); S.sc = id; S.mode = mode; S.base = base; S.W = W; reset(); syncUI(); $(id).classList.add('on'); batchSoon(); tick();
+  }
+  var SCEN = { sc1: ['idle', 2, 1], sc2: ['idle', 2, 5], sc3: ['walk', 1, 5] };
+  function rerun() { var c = SCEN[S.sc] || SCEN.sc2; scenario(S.sc in SCEN ? S.sc : 'sc2', c[0], c[1], c[2]); }
+  $('newSeed').onclick = function () { $('seed').value = 1 + Math.floor(Math.random() * 9999); rerun(); };
+  $('seed').onchange = rerun;
+  $('sc1').onclick = function () { scenario('sc1', 'idle', 2, 1); };
+  $('sc2').onclick = function () { scenario('sc2', 'idle', 2, 5); };
+  $('sc3').onclick = function () { scenario('sc3', 'walk', 1, 5); };
+  $('pause').onclick = function () { S.run = !S.run; this.textContent = S.run ? 'Pausar' : 'Continuar'; };
+  $('reset').onclick = function () { S.alerted = false; S.cnt = 0; S.alertAt = -1; render(); };
+  $('sDist').oninput = function () { S.mode = 'idle'; S.base = +this.value; S.alerted = false; S.cnt = 0; $('oDist').textContent = fmt(S.base, 1) + ' m'; ['sc1', 'sc2', 'sc3'].forEach(function (id) { $(id).classList.remove('on'); }); };
+  $('sW').oninput = function () { S.W = +this.value; $('oW').textContent = S.W + (S.W === 1 ? ' leitura' : ' leituras'); batchSoon(); };
+  $('sSig').oninput = function () { S.sig = +this.value; $('oSig').textContent = fmt(S.sig, S.sig % 1 ? 1 : 0) + ' dB'; batchSoon(); };
+  $('sThr').oninput = function () { S.thr = +this.value; $('oThr').textContent = fmt(S.thr, 1) + ' m'; batchSoon(); };
+  $('sP').oninput = function () { S.P = +this.value; $('oP').textContent = S.P; batchSoon(); };
+
+  /* estado inicial: etiqueta parada a 2 m, com média móvel; já com alguns segundos de histórico */
+  syncUI(); $('sc2').classList.add('on'); readSeed();
+  if (/github\.io$/.test(location.hostname) || location.protocol === 'file:') $('repoLinks').hidden = false;
+  for (var i = 0; i < 40; i++) tick();
+  batch();
+  setInterval(function () { if (S.run) tick(); }, TICK);
+})();
+</script>
+
+</body>
+</html>
