@@ -11,7 +11,7 @@ Um idoso com demência pode sair de casa sem acompanhamento. Os localizadores GP
 
 Abra o `index.html` no navegador, ou acesse a página publicada:
 
-`https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/`
+`https://heymoonshaker.github.io/alerta-proximidade/`
 
 Na página, use os botões "Idoso parado a 2 m" e "Saída de casa", ligue e desligue a chave "Média móvel" para ver o antes e o depois, e mexa nos ajustes. A tabela de falso alarme é recalculada a cada mudança. Funciona sem instalar nada.
 
