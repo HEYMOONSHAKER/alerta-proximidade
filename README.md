@@ -11,9 +11,19 @@ Um idoso com demência pode sair de casa sem acompanhamento. Os localizadores GP
 
 Abra o `index.html` no navegador, ou acesse a página publicada:
 
-`https://heymoonshaker.github.io/alerta-proximidade-iot/`
+`https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/`
 
-Na página, clique nos três cenários (parado a 2 m sem filtro, parado a 2 m com média móvel, saída de casa) e mexa nos ajustes. A tabela de falso alarme é recalculada a cada mudança. Funciona sem instalar nada.
+Na página, use os botões "Idoso parado a 2 m" e "Saída de casa", ligue e desligue a chave "Média móvel" para ver o antes e o depois, e mexa nos ajustes. A tabela de falso alarme é recalculada a cada mudança. Funciona sem instalar nada.
+
+## Como usar os ajustes
+
+- **Distância real:** onde o idoso está de verdade. É o ponto cheio na planta.
+- **Janela da média móvel (W):** quantas das últimas leituras entram na média antes da decisão. Na demonstração, 1 leitura equivale a 1 segundo. No sistema real, depende da SmartTag e será medido.
+- **Ruído do sinal:** o quanto o RSSI treme, mesmo com o idoso parado. Casas com mais paredes e móveis têm mais ruído.
+- **Limiar de distância:** a partir de quanto o sistema considera que o idoso saiu. É o círculo tracejado.
+- **Leituras seguidas:** quantas leituras seguidas acima do limiar são exigidas antes do alerta. Evita disparar por uma leitura isolada, ao custo de um pequeno atraso.
+
+O ponto vazado na planta é o palpite do sistema sobre onde o idoso está. Quando ele se afasta do ponto cheio, o ruído está enganando o sistema.
 
 ## Simulação em Python
 

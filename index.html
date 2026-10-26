@@ -110,6 +110,9 @@ button.on { background: var(--accent); border-color: var(--accent); color: var(-
 .me.out { fill: var(--alert); }
 
 .start ol, .how ol { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 4px; }
+.switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 9px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; }
+.switch input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+.scdesc { margin: 0; padding: 10px 14px; border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; max-width: 85ch; }
 .seedrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; }
 .seedrow input { width: 90px; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; }
 details.how summary { cursor: pointer; font-family: var(--font-head); font-size: 20px; font-weight: 700; }
@@ -136,19 +139,20 @@ a { color: var(--accent); }
   <section class="panel start">
     <h2>Como usar</h2>
     <ol>
-      <li>Clique em <b>Parado a 2 m, sem filtro</b>. A etiqueta não se mexe, mas o sistema dá alarme falso.</li>
-      <li>Clique em <b>Parado a 2 m, com média móvel</b>. O mesmo sinal, agora sem alarme falso.</li>
+      <li>Com <b>Idoso parado a 2 m</b>, desligue a chave <b>Média móvel</b>. O idoso não se mexe, mas o sistema dá alarme falso.</li>
+      <li>Ligue a chave de novo. O mesmo sinal, agora sem alarme falso.</li>
       <li>Clique em <b>Saída de casa</b> e veja o alerta chegar ao cuidador.</li>
       <li>Mexa nos ajustes e acompanhe a tabela de falso alarme mudar.</li>
     </ol>
   </section>
 
   <div class="btns" role="group" aria-label="Cenários">
-    <button id="sc1" type="button">Parado a 2 m, sem filtro</button>
-    <button id="sc2" type="button">Parado a 2 m, com média móvel</button>
+    <button id="sc2" type="button">Idoso parado a 2 m</button>
     <button id="sc3" type="button">Saída de casa</button>
     <button id="pause" type="button">Pausar</button>
+    <label class="switch" for="fOn"><input id="fOn" type="checkbox" checked><span id="fOnTxt">Média móvel: ligada</span></label>
   </div>
+  <p id="scDesc" class="scdesc" aria-live="polite"></p>
   <div class="seedrow">
     <label for="seed">Semente do sorteio</label><input id="seed" type="number" min="0" max="999999" value="42">
     <button id="newSeed" type="button">Nova semente</button>
@@ -165,7 +169,7 @@ a { color: var(--accent); }
   <div class="grid2">
     <section class="panel">
       <h2>Planta da casa</h2>
-      <p class="cap">O círculo tracejado é o limiar. O ponto cheio é a etiqueta de verdade, o ponto vazado é onde o sistema acha que ela está.</p>
+      <p class="cap">O círculo tracejado é o limiar. O ponto cheio é o idoso (a etiqueta que ele carrega), onde ele está de verdade. O ponto vazado é o palpite do sistema sobre onde ele está.</p>
       <svg id="plan" viewBox="0 0 520 300" role="img" aria-label="Planta da casa com o ESP32, o limiar de distância e a posição da etiqueta"></svg>
       <div id="notice" class="notice">Nenhum alerta enviado. O cuidador só é avisado quando a distância estimada passa do limiar.</div>
     </section>
@@ -181,15 +185,15 @@ a { color: var(--accent); }
       <h2>Ajustes</h2>
       <div class="sliders">
         <div class="sl"><label for="sDist">Distância real da etiqueta</label><output id="oDist">2,0 m</output>
-          <input id="sDist" type="range" min="0.5" max="9" step="0.1" value="2"><small>Mexer aqui põe a etiqueta parada na distância escolhida, com pequena variação natural de movimento.</small></div>
+          <input id="sDist" type="range" min="0.5" max="9" step="0.1" value="2"><small>Onde o idoso está de verdade. Mexer aqui o deixa parado na distância escolhida, com uma pequena variação natural de movimento.</small></div>
         <div class="sl"><label for="sW">Janela da média móvel (W)</label><output id="oW">5 leituras</output>
-          <input id="sW" type="range" min="1" max="20" step="1" value="5"></div>
+          <input id="sW" type="range" min="1" max="20" step="1" value="5"><small>Quantas das últimas leituras entram na média, como olhar o termômetro várias vezes antes de confiar. Nesta demonstração, 1 leitura equivale a 1 segundo. No sistema real, isso depende da SmartTag e será medido.</small></div>
         <div class="sl"><label for="sSig">Ruído do sinal</label><output id="oSig">4 dB</output>
-          <input id="sSig" type="range" min="1" max="8" step="0.5" value="4"></div>
+          <input id="sSig" type="range" min="1" max="8" step="0.5" value="4"><small>O quanto o sinal de rádio treme, mesmo com o idoso parado. Paredes, móveis e outras pessoas aumentam esse tremor, então uma casa cheia tem mais ruído.</small></div>
         <div class="sl"><label for="sThr">Limiar de distância</label><output id="oThr">4,0 m</output>
-          <input id="sThr" type="range" min="2" max="8" step="0.5" value="4"></div>
+          <input id="sThr" type="range" min="2" max="8" step="0.5" value="4"><small>Distância a partir da qual o sistema considera que o idoso saiu. É o círculo tracejado na planta.</small></div>
         <div class="sl"><label for="sP">Leituras seguidas acima do limiar</label><output id="oP">1</output>
-          <input id="sP" type="range" min="1" max="5" step="1" value="1"><small>Com 1, qualquer leitura filtrada acima do limiar já dispara o alerta.</small></div>
+          <input id="sP" type="range" min="1" max="5" step="1" value="1"><small>Quantas leituras seguidas precisam passar do limiar antes de o alerta ser enviado, para não disparar por uma leitura isolada. Com 1, dispara na primeira. Se uma leitura voltar para dentro do limiar, a contagem recomeça.</small></div>
       </div>
       <div class="btns" style="margin-top:14px"><button id="reset" type="button">Zerar alerta</button></div>
     </div>
@@ -237,7 +241,7 @@ a { color: var(--accent); }
   function distFrom(r) { return Math.pow(10, (R0 - r) / (10 * N)); }
   function mean(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s / a.length; }
 
-  var S = { mode: 'idle', base: 2, W: 5, sig: 4, thr: 4, P: 1, run: true, raw: [], filt: [], real: [], est: [],
+  var S = { mode: 'idle', base: 2, W: 5, Wuser: 5, fOn: true, sig: 4, thr: 4, P: 1, run: true, raw: [], filt: [], real: [], est: [],
             n: 0, cnt: 0, alerted: false, alertAt: -1, alertDist: 0, seed: 42, sc: 'sc2' };
 
   function reset() { S.raw = []; S.filt = []; S.real = []; S.est = []; S.n = 0; S.cnt = 0; S.alerted = false; S.alertAt = -1; }
@@ -366,33 +370,49 @@ a { color: var(--accent); }
   /* controles */
   function syncUI() {
     $('sDist').value = Math.min(9, S.base); $('oDist').textContent = fmt(S.base, 1) + ' m';
-    $('sW').value = S.W; $('oW').textContent = S.W + (S.W === 1 ? ' leitura' : ' leituras');
+    $('sW').value = S.Wuser; labelW(); $('fOn').checked = S.fOn; $('fOnTxt').textContent = S.fOn ? 'Média móvel: ligada' : 'Média móvel: desligada';
     $('sSig').value = S.sig; $('oSig').textContent = fmt(S.sig, S.sig % 1 ? 1 : 0) + ' dB';
     $('sThr').value = S.thr; $('oThr').textContent = fmt(S.thr, 1) + ' m';
     $('sP').value = S.P; $('oP').textContent = S.P;
-    ['sc1', 'sc2', 'sc3'].forEach(function (id) { $(id).classList.remove('on'); });
+    ['sc2', 'sc3'].forEach(function (id) { $(id).classList.remove('on'); });
   }
+  function labelW() { $('oW').textContent = S.fOn ? S.Wuser + (S.Wuser === 1 ? ' leitura' : ' leituras') : 'desligada (1 leitura)'; }
+  function applyW() { S.W = S.fOn ? S.Wuser : 1; labelW(); }
   function readSeed() { var v = parseInt($('seed').value, 10); S.seed = isNaN(v) ? 42 : Math.abs(v); $('seed').value = S.seed; rnd = makeRng(S.seed); }
-  function scenario(id, mode, base, W) {
-    readSeed(); S.sc = id; S.mode = mode; S.base = base; S.W = W; reset(); syncUI(); $(id).classList.add('on'); batchSoon(); tick();
+  function scenario(id, mode, base) {
+    readSeed(); S.sc = id; S.mode = mode; S.base = base; applyW(); showDesc(id); reset(); syncUI(); $(id).classList.add('on'); batchSoon(); tick();
   }
-  var SCEN = { sc1: ['idle', 2, 1], sc2: ['idle', 2, 5], sc3: ['walk', 1, 5] };
-  function rerun() { var c = SCEN[S.sc] || SCEN.sc2; scenario(S.sc in SCEN ? S.sc : 'sc2', c[0], c[1], c[2]); }
+  function showDesc(k) {
+    var w = S.Wuser, t;
+    if (k === 'manual') t = 'Modo manual: o idoso fica parado na distância que você escolheu no controle de distância real.';
+    else if (k === 'sc3') t = S.fOn
+      ? 'O idoso caminha para fora de casa, afastando-se do ESP32. Com a média das últimas ' + w + ' leituras, o alerta chega ao cuidador quando a distância estimada passa do limiar.'
+      : 'O idoso caminha para fora de casa. Sem a média móvel, o sistema usa só a última leitura, e o alerta tende a sair antes da hora, por causa do ruído.';
+    else t = S.fOn
+      ? 'O idoso está parado a 2 m do ESP32, dentro de casa, sem sair. Com a média das últimas ' + w + ' leituras, o sinal se acalma e o alarme falso quase não aparece. Desligue a chave para ver a diferença.'
+      : 'O idoso está parado a 2 m do ESP32, dentro de casa, sem sair. Sem a média móvel, o sistema usa só a última leitura, que oscila, e acaba achando que ele saiu. É o alarme falso.';
+    $('scDesc').textContent = t;
+  }
+  var SCEN = { sc2: ['idle', 2], sc3: ['walk', 1] };
+  function rerun() { var c = SCEN[S.sc] || SCEN.sc2; scenario(S.sc in SCEN ? S.sc : 'sc2', c[0], c[1]); }
   $('newSeed').onclick = function () { $('seed').value = 1 + Math.floor(Math.random() * 9999); rerun(); };
   $('seed').onchange = rerun;
-  $('sc1').onclick = function () { scenario('sc1', 'idle', 2, 1); };
-  $('sc2').onclick = function () { scenario('sc2', 'idle', 2, 5); };
-  $('sc3').onclick = function () { scenario('sc3', 'walk', 1, 5); };
+  $('sc2').onclick = function () { scenario('sc2', 'idle', 2); };
+  $('sc3').onclick = function () { scenario('sc3', 'walk', 1); };
+  $('fOn').onchange = function () {
+    S.fOn = this.checked; $('fOnTxt').textContent = S.fOn ? 'Média móvel: ligada' : 'Média móvel: desligada';
+    applyW(); S.alerted = false; S.cnt = 0; S.alertAt = -1; showDesc(S.sc in SCEN ? S.sc : 'manual'); render();
+  };
   $('pause').onclick = function () { S.run = !S.run; this.textContent = S.run ? 'Pausar' : 'Continuar'; };
   $('reset').onclick = function () { S.alerted = false; S.cnt = 0; S.alertAt = -1; render(); };
-  $('sDist').oninput = function () { S.mode = 'idle'; S.base = +this.value; S.alerted = false; S.cnt = 0; $('oDist').textContent = fmt(S.base, 1) + ' m'; ['sc1', 'sc2', 'sc3'].forEach(function (id) { $(id).classList.remove('on'); }); };
-  $('sW').oninput = function () { S.W = +this.value; $('oW').textContent = S.W + (S.W === 1 ? ' leitura' : ' leituras'); batchSoon(); };
+  $('sDist').oninput = function () { S.sc = 'manual'; showDesc('manual'); S.mode = 'idle'; S.base = +this.value; S.alerted = false; S.cnt = 0; $('oDist').textContent = fmt(S.base, 1) + ' m'; ['sc2', 'sc3'].forEach(function (id) { $(id).classList.remove('on'); }); };
+  $('sW').oninput = function () { S.Wuser = +this.value; applyW(); showDesc(S.sc in SCEN ? S.sc : 'manual'); batchSoon(); };
   $('sSig').oninput = function () { S.sig = +this.value; $('oSig').textContent = fmt(S.sig, S.sig % 1 ? 1 : 0) + ' dB'; batchSoon(); };
   $('sThr').oninput = function () { S.thr = +this.value; $('oThr').textContent = fmt(S.thr, 1) + ' m'; batchSoon(); };
   $('sP').oninput = function () { S.P = +this.value; $('oP').textContent = S.P; batchSoon(); };
 
   /* estado inicial: etiqueta parada a 2 m, com média móvel; já com alguns segundos de histórico */
-  syncUI(); $('sc2').classList.add('on'); readSeed();
+  syncUI(); $('sc2').classList.add('on'); readSeed(); showDesc('sc2');
   if (/github\.io$/.test(location.hostname) || location.protocol === 'file:') $('repoLinks').hidden = false;
   for (var i = 0; i < 40; i++) tick();
   batch();
