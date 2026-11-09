@@ -25,7 +25,7 @@ g++ $FLAGS -I stubs -DINO_FILE="\"$B/alerta_smarttag_rede.ino\"" harness.cpp -o 
 g++ $FLAGS -I stubs -DINO_FILE="\"$B/mqtt/alerta_smarttag_rede.ino\"" harness.cpp -o "$B/h64m" || exit 1
 g++ $FLAGS -DMILLIS_T=uint32_t -I stubs -DINO_FILE="\"$B/alerta32.ino\"" harness.cpp -o "$B/h32" || exit 1
 
-COMUM="dentro_estavel saida_gradual corte_perto corte_medio corte_longe troca_lacuna_2 troca_lacuna_4 troca_lacuna_6 troca_lacuna_8 troca_lacuna_10 troca_lacuna_14 volta_mac_novo_fraco so_tag_fraca vizinho_forte comandos telegram_403 wifi_cai perda_e_rajadas mqtt_fora rede_falhando_bloqueia envio_lento_realimenta saida_com_envio_lento oscila_no_limite oscila_e_sai"
+COMUM="demo_1_dentro demo_2_saida dentro_estavel saida_gradual corte_perto corte_medio corte_longe troca_lacuna_2 troca_lacuna_4 troca_lacuna_6 troca_lacuna_8 troca_lacuna_10 troca_lacuna_14 volta_mac_novo_fraco so_tag_fraca vizinho_forte comandos telegram_403 wifi_cai perda_e_rajadas mqtt_fora rede_falhando_bloqueia envio_lento_realimenta saida_com_envio_lento oscila_no_limite oscila_e_sai"
 MQTT="dentro_estavel saida_gradual corte_medio wifi_cai telegram_403 mqtt mqtt_fora"
 VOLTA="rollover_troca rollover_silencio troca_lacuna_8 corte_medio saida_gradual"
 if [ $# -gt 0 ]; then COMUM="$*"; MQTT=""; VOLTA=""; fi

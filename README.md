@@ -11,7 +11,7 @@ Um idoso com demência pode sair de casa sem acompanhamento. Os localizadores GP
 
 Abra o `index.html` no navegador, ou acesse a página publicada:
 
-`https://heymoonshaker.github.io/alerta-proximidade/`
+`https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/`
 
 Na página, use os botões "Idoso parado a 2 m" e "Saída de casa", ligue e desligue a chave "Média móvel" para ver o antes e o depois, e mexa nos ajustes. A tabela de falso alarme é recalculada a cada mudança. Funciona sem instalar nada.
 
@@ -123,7 +123,9 @@ Pasta `firmware/alerta_smarttag_rede/`. Roda no ESP32-WROOM-32U (antena externa)
 
 O único caso pior que o anterior é o corte brusco partindo de longe do limiar (10,7 s contra 9,1 s). Os scripts que geraram essas duas tabelas (comparação com o `.ino` antigo) não estão neste repositório. Os testes do firmware atual estão em `testes/`.
 
-**Testes no PC.** A pasta `testes/` roda o próprio `.ino` com Bluetooth, Wi-Fi, Telegram e relógio simulados, em 27 cenários (saída gradual, corte brusco, troca de MAC, Telegram fora do ar, envio lento, sinal oscilando no limite, volta do contador de tempo etc.), com AddressSanitizer e UBSanitizer. Veja `testes/LEIAME.md`. Isso valida a lógica; o rádio real e a memória só se confirmam na placa.
+**Testes no PC.** A pasta `testes/` roda o próprio `.ino` com Bluetooth, Wi-Fi, Telegram e relógio simulados, em 29 cenários (saída gradual, corte brusco, troca de MAC, Telegram fora do ar, envio lento, sinal oscilando no limite, volta do contador de tempo etc.), com AddressSanitizer e UBSanitizer. Veja `testes/LEIAME.md`. Isso valida a lógica; o rádio real e a memória só se confirmam na placa.
+
+**Demonstração ao vivo: a mesma simulação na placa e no Git.** Dois cenários (tag parada dentro por 3 min, sem alerta; e sair pelo portão e voltar, com alerta e normalização) rodam no PC com `./testes/demo.sh` e são refeitos na placa com a SmartTag. O roteiro, o resultado esperado e como conferir que o código é o mesmo estão em `docs/demonstracao_ao_vivo.md`.
 
 **O que foi medido na bancada** (um ambiente, uma SmartTag; não é validação estatística; medido com uma versão anterior do firmware, que tinha o comando de calibração em metros, hoje removido)
 
@@ -160,9 +162,10 @@ simulacao/requirements.txt    dependências
 firmware/alerta_smarttag_rede/
   alerta_smarttag_rede.ino    firmware do ESP32 (BLE + Telegram, versão 6.1)
   segredos.exemplo.h          modelo da configuração (copie para segredos.h)
-testes/                       testes do firmware no PC (harness, stubs e script)
+testes/                       testes do firmware no PC (harness, stubs, rodar_testes.sh e demo.sh)
 saidas/                       figuras e tabela geradas com os parâmetros padrão
 docs/demonstracao.png         captura da demonstração
+docs/demonstracao_ao_vivo.md  roteiro para refazer os mesmos dois cenários na placa e no PC
 ```
 
 ## Nota sobre o desenvolvimento

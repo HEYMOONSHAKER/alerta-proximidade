@@ -169,6 +169,41 @@ struct Scn {
 static std::map<std::string, Scn> cenarios;
 
 static void defineCenarios() {
+  // ---- Cenarios da demonstracao ao vivo (os mesmos dois que se refazem na placa; veja docs/demonstracao_ao_vivo.md)
+  cenarios["demo_1_dentro"] = {180,
+    [] { fase(A, 0, 200, -58); },  // tag parada dentro por 3 min (o teste termina em 190 s, com leituras ate o fim)
+    [] {
+      CHECK(contaEv("TRAVA") == 1, "esperava 1 trava, vi %d", contaEv("TRAVA"));
+      CHECK(contaEv("ALERTA_SAIDA") + contaEv("ALERTA_SIL") == 0, "alerta falso: %d", contaEv("ALERTA_SAIDA") + contaEv("ALERTA_SIL"));
+      CHECK(contaEnvPre("ESP32 Online.") == 1, "mensagem inicial");
+      CHECK(contaEnv("Monitorando a SmartTag.") == 1, "mensagem de monitoramento");
+      CHECK(g_sent.size() == 2, "mensagens enviadas: %zu (esperava 2)", g_sent.size());
+    }};
+
+  cenarios["demo_2_saida"] = {200,
+    [] {
+      fase(A, 0, 60, -58);           // 0 a 60 s: tag dentro
+      rampa(A, 60, 80, -58, -92);    // 60 a 80 s: sai andando pelo portao
+      fase(A, 80, 140, -92);         // 80 a 140 s: fica fora
+      rampa(A, 140, 160, -92, -58);  // 140 a 160 s: volta
+      fase(A, 160, 200, -58);        // 160 a 200 s: dentro de novo
+    },
+    [] {
+      double cruza = 60 + 20.0 * 10.0 / 34.0;  // instante em que o nivel medio passa do limiar (-68)
+      const Ev *e = primeiro("ALERTA_SAIDA", 50);
+      CHECK(e != nullptr, "nao alertou na saida");
+      if (e) {
+        double atraso = e->t - cruza;
+        printf("  cruzou o limiar em ~%.0f s; alerta em %.1f s (atraso %.1f s)\n", cruza, e->t, atraso);
+        CHECK(atraso > -5 && atraso < 20, "atraso fora do esperado: %.1f", atraso);
+      }
+      CHECK(contaEv("ALERTA_SIL") == 0, "alerta por silencio indevido");
+      CHECK(contaEnv(MSG_SAIDA) == 1, "mensagem de saida enviada %d vezes", contaEnv(MSG_SAIDA));
+      CHECK(contaEv("NORMALIZA") == 1, "normalizacoes: %d", contaEv("NORMALIZA"));
+      CHECK(contaEnv(MSG_VOLTOU) == 1, "mensagem de retorno");
+      CHECK(g_sent.size() == 4, "mensagens enviadas: %zu (esperava 4)", g_sent.size());
+    }};
+
   cenarios["dentro_estavel"] = {1800,
     [] { fase(A, 0, 1800, -58); },
     [] {
