@@ -58,7 +58,7 @@ def ler_argumentos():
     return ap.parse_args()
 
 
-# Parâmetros fixos do cenário de falso alarme (Tabela 2 do relatório)
+# Parâmetros fixos do cenário de falso alarme (estudo preliminar citado no relatório)
 DIST_PARADO = 2.0   # distância real do idoso parado (m)
 VARIACAO = 0.3      # variação natural de movimento (m, uniforme +- VARIACAO)
 
