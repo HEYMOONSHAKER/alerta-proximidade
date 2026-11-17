@@ -11,7 +11,7 @@ Um idoso com demência pode sair de casa sem acompanhamento. Os localizadores GP
 
 Abra o `index.html` no navegador, ou acesse a página publicada:
 
-`https://heymoonshaker.github.io/alerta-proximidade/`
+`https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/`
 
 Na página, use os botões "Idoso parado a 2 m" e "Saída de casa", ligue e desligue a chave "Média móvel" para ver o antes e o depois, e mexa nos ajustes. A tabela de falso alarme é recalculada a cada mudança. Funciona sem instalar nada.
 
@@ -123,7 +123,9 @@ Pasta `firmware/alerta_smarttag_rede/`. Roda no ESP32-WROOM-32U (antena externa)
 
 O único caso pior que o anterior é o corte brusco partindo de longe do limiar (10,7 s contra 9,1 s). Os scripts que geraram essas duas tabelas (comparação com o `.ino` antigo) não estão neste repositório. Os testes do firmware atual estão em `testes/`.
 
-**Testes no PC.** A pasta `testes/` roda o próprio `.ino` com Bluetooth, Wi-Fi, Telegram e relógio simulados, em 29 cenários (saída gradual, corte brusco, troca de MAC, Telegram fora do ar, envio lento, sinal oscilando no limite, volta do contador de tempo etc.), com AddressSanitizer e UBSanitizer. Veja `testes/LEIAME.md`. Isso valida a lógica; o rádio real e a memória só se confirmam na placa.
+**Testes no PC.** A pasta `testes/` roda o próprio `.ino` com Bluetooth, Wi-Fi, Telegram e relógio simulados, em 29 cenários (mais 9 da versão completa do Wokwi e 4 do protótipo simples) (saída gradual, corte brusco, troca de MAC, Telegram fora do ar, envio lento, sinal oscilando no limite, volta do contador de tempo etc.), com AddressSanitizer e UBSanitizer. Veja `testes/LEIAME.md`. Isso valida a lógica; o rádio real e a memória só se confirmam na placa.
+
+**Etapa 1, protótipo no Wokwi (sem placa).** A pasta `wokwi/` tem um protótipo de cerca de 100 linhas para o simulador Wokwi, que não tem Bluetooth: o sinal da tag é simulado por um potenciômetro, um botão e o comando `s`, e o aviso é um LED e um buzzer. É a primeira de três etapas (Wokwi, depois a simulação em Python e a página web, depois a placa com este firmware). Passo a passo em `wokwi/LEIAME.md`. A pasta `wokwi/versao_completa/` roda o código completo da placa no Wokwi, como extra.
 
 **Demonstração ao vivo: a mesma simulação na placa e no Git.** Dois cenários (tag parada dentro por 3 min, sem alerta; e sair pelo portão e voltar, com alerta e normalização) rodam no PC com `./testes/demo.sh` e são refeitos na placa com a SmartTag. O roteiro, o resultado esperado e como conferir que o código é o mesmo estão em `docs/demonstracao_ao_vivo.md`.
 
@@ -132,7 +134,9 @@ O único caso pior que o anterior é o corte brusco partindo de longe do limiar 
 - Com a tag parada a 2,2 m e sem obstáculo, a média de 20 leituras ficou estável em torno de -60,2 dBm (variação de ±0,5 dB). As leituras brutas variam cerca de 4,5 dB, compatível com o ruído de 4 dB da simulação.
 - Calibração em linha reta com 4 pontos: RSSI0 = -45,3 dBm e n = 3,01. Trena contra estimativa: 1,00 m (1,01), 2,00 m (2,01), 3,00 m (2,83) e 4,00 m (4,18).
 - Fora dessa linha o erro cresce: em outros pontos da sala a estimativa chegou a errar por mais de 1 m, por causa de reflexões e obstáculos. Por isso a decisão do alarme usa o limiar em dBm, e não a distância em metros.
-- A mensagem de teste (`t`) chegou ao Telegram. Os testes de travessia da porta e de falso alarme no local definitivo ainda serão feitos.
+- A mensagem de teste (`t`) chegou ao Telegram. Os testes de travessia da porta e de falso alarme na casa dos avós (firmware 6.1) estão descritos na seção seguinte e no relatório.
+
+**Resultados na casa dos avós (etapa 3, firmware 6.1).** Detalhes no relatório. Três dias de teste, cerca de 6 horas de monitoramento por dia, ESP-32U a 5 m do portão. Atraso entre a etiqueta cruzar o limiar e o cuidador ser notificado: 7 a 15 s. Falsos alarmes residuais: 3 a 5 por dia. Os parâmetros e os atrasos de cada etapa (Wokwi, Python, placa) são diferentes e não devem ser comparados entre si: só a etapa 3 é medição.
 
 ## O modelo
 
@@ -141,7 +145,7 @@ RSSI(d) = RSSI0 - 10 · n · log10(d) + ruído
 d_est   = 10 ^ ((RSSI0 - RSSI) / (10 · n))
 ```
 
-Parâmetros adotados na simulação: RSSI0 = −50 dBm a 1 m, n = 2,2, ruído normal de 4 dB, limiar de 4 m (cerca de −63,2 dBm). No firmware, os valores medidos na bancada foram RSSI0 = −45,3 dBm e n = 3,01.
+Parâmetros adotados na simulação: RSSI0 = −50 dBm a 1 m, n = 2,2, ruído normal de 4 dB, limiar de 4 m (cerca de −63,2 dBm). No firmware, os valores medidos na bancada foram RSSI0 = −45,3 dBm e n = 3,01 (ambiente e versão anteriores). Na casa dos avós, com o firmware 6.1, a calibração deu RSSI0 = −60,3 dBm e n = 1,40, e o limiar ficou em −68 dBm (cerca de 3,5 m).
 
 ## Limitações
 
@@ -151,7 +155,7 @@ Parâmetros adotados na simulação: RSSI0 = −50 dBm a 1 m, n = 2,2, ruído no
 - A estimativa em metros não é confiável fora da linha em que foi calibrada. O alarme usa o limiar em dBm definido no local.
 - O limiar não é gravado na memória flash pelo comando `l`: o valor é copiado para `LIMIAR_FIXO_DBM` no código. A travada na tag é refeita sozinha a cada reinício. A conexão ao Telegram usa `setInsecure()` (não valida o certificado) e o MQTT público é aberto. São aceitáveis para o protótipo, não para uso real.
 - A decisão é por nível de sinal: uma falha de recepção com a tag ainda dentro pode virar "sinal interrompido", e uma saída que some atrás de um obstáculo pode sair como mensagem de silêncio. O anti-spam reduz as repetições, mas não elimina o falso aviso isolado.
-- Próximos passos: testes de travessia e de falso alarme no local definitivo, gravar o limiar na memória flash e validar com mais de uma tag.
+- Próximos passos: gravar o limiar na memória flash, validar com mais de uma tag e reduzir os falsos alarmes residuais da casa dos avós (3 a 5 por dia, segundo o relatório).
 
 ## Estrutura
 
@@ -163,6 +167,8 @@ firmware/alerta_smarttag_rede/
   alerta_smarttag_rede.ino    firmware do ESP32 (BLE + Telegram, versão 6.1)
   segredos.exemplo.h          modelo da configuração (copie para segredos.h)
 testes/                       testes do firmware no PC (harness, stubs, rodar_testes.sh e demo.sh)
+wokwi/                        etapa 1: protótipo simples no Wokwi (sketch.ino, diagram.json, LEIAME.md)
+wokwi/versao_completa/        extra: o código completo da placa rodando no Wokwi com tag simulada
 saidas/                       figuras e tabela geradas com os parâmetros padrão
 docs/demonstracao.png         captura da demonstração
 docs/demonstracao_ao_vivo.md  roteiro para refazer os mesmos dois cenários na placa e no PC

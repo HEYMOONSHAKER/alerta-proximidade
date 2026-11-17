@@ -199,7 +199,7 @@ a { color: var(--accent); }
     </div>
     <div>
       <h2>Falso alarme em 300 sessões</h2>
-      <p class="cap">Etiqueta parada a cerca de 2 m, sessões de 140 leituras, com os ajustes ao lado. Equivale à Tabela 3 do relatório.</p>
+      <p class="cap">Etiqueta parada a cerca de 2 m, sessões de 140 leituras, com os ajustes ao lado. A coluna Relatório traz os valores do script em Python (simulacao_rssi.py), citado no relatório como estudo preliminar.</p>
       <div class="bhead"><span>Janela W</span><span></span><span>Agora</span><span>Relatório</span></div>
       <div class="bars" id="bars"></div>
       <p class="foot" style="margin-top:10px">A coluna "Relatório" vale para ruído de 4 dB, limiar de 4 m e 1 leitura seguida.</p>
@@ -225,12 +225,12 @@ a { color: var(--accent); }
 
   <p id="repoLinks" class="foot" hidden>Código da simulação em Python: <a href="simulacao/simulacao_rssi.py">simulacao/simulacao_rssi.py</a>. Instruções no <a href="README.md">README</a>.</p>
 
-  <p class="foot">Dados simulados pelos autores a partir do modelo de perda de percurso log-distance. Não são medições com a SmartTag real, que serão feitas com o ESP32-WROOM-32U e a antena externa.</p>
+  <p class="foot">Dados simulados pelos autores a partir do modelo de perda de percurso log-distance. Não são medições com a SmartTag real; as medições na casa dos avós, com o ESP32-WROOM-32U e a antena externa, estão no relatório.</p>
 </div>
 
 <script>
 (function () {
-  var R0 = -50, N = 2.2, TICK = 400, SHOW = 80, DOOR = 2.5, REF = { 1: 100, 2: 73, 3: 23, 5: 2, 8: 0, 12: 0, 16: 0, 20: 0 };
+  var R0 = -50, N = 2.2, TICK = 400, SHOW = 80, DOOR = 2.5, REF = { 1: 100, 2: 71, 3: 27, 5: 1, 8: 0, 12: 0, 16: 0, 20: 0 };
   var $ = function (id) { return document.getElementById(id); };
   var fmt = function (x, d) { return x.toFixed(d).replace('.', ',').replace('-', '−'); };
   function makeRng(seed) { var a = seed >>> 0; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
